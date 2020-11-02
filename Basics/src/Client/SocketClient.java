@@ -1,4 +1,4 @@
-package client;
+package Client;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import server.Payload;
 import server.PayloadType;
 
 //part 6
