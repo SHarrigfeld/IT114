@@ -5,6 +5,7 @@ import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -39,10 +40,13 @@ public class ClientUI extends JFrame implements Event {
 	JPanel userPanel;
 	List<User> users = new ArrayList<User>();
 	private final static Logger log = Logger.getLogger(ClientUI.class.getName());
-	Dimension windowSize = new Dimension(400, 400);
+	// Dimension windowSize = new Dimension(400, 400);
+	Dimension windowSize = Toolkit.getDefaultToolkit().getScreenSize();
 
 	public ClientUI(String title) {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		windowSize.width *= .5;
+		windowSize.height *= .5;
 		setPreferredSize(windowSize);
 		setLocationRelativeTo(null);
 		self = this;
@@ -212,6 +216,7 @@ public class ClientUI extends JFrame implements Event {
 
 	void addMessage(String str) {
 		JEditorPane entry = new JEditorPane();
+		entry.setContentType("text/html");
 		entry.setEditable(false);
 		// entry.setLayout(null);
 		entry.setText(str);
@@ -221,7 +226,6 @@ public class ClientUI extends JFrame implements Event {
 		entry.setPreferredSize(d);
 		entry.setMaximumSize(d);
 		textArea.add(entry);
-
 		pack();
 		System.out.println(entry.getSize());
 		JScrollBar sb = ((JScrollPane) textArea.getParent().getParent()).getVerticalScrollBar();
