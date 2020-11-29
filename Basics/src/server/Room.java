@@ -15,6 +15,8 @@ public class Room implements AutoCloseable {
 	private final static String COMMAND_TRIGGER = "/";
 	private final static String CREATE_ROOM = "createroom";
 	private final static String JOIN_ROOM = "joinroom";
+	private final static String FLIP = "flip";
+	private final static String ROLL = "roll";
 
 	public Room(String name) {
 		this.name = name;
@@ -37,7 +39,19 @@ public class Room implements AutoCloseable {
 		} else {
 			clients.add(client);
 			if (client.getClientName() != null) {
-				sendMessage(client, "joined the room " + getName());
+				client.sendClearList();
+				sendConnectionStatus(client, true, "joined the room " + getName());
+				updateClientList(client);
+			}
+		}
+	}
+
+	private void updateClientList(ServerThread client) {
+		Iterator<ServerThread> iter = clients.iterator();
+		while (iter.hasNext()) {
+			ServerThread c = iter.next();
+			if (c != client) {
+				boolean messageSent = client.sendConnectionStatus(c.getClientName(), true, null);
 			}
 		}
 	}
@@ -45,7 +59,8 @@ public class Room implements AutoCloseable {
 	protected synchronized void removeClient(ServerThread client) {
 		clients.remove(client);
 		if (clients.size() > 0) {
-			sendMessage(client, "left the room");
+			// sendMessage(client, "left the room");
+			sendConnectionStatus(client, false, "left the room " + getName());
 		} else {
 			cleanupEmptyRoom();
 		}
@@ -80,8 +95,8 @@ public class Room implements AutoCloseable {
 	 * @param client  The sender of the message (since they'll be the ones
 	 *                triggering the actions)
 	 */
-	private boolean processCommands(String message, ServerThread client) {
-		boolean wasCommand = false;
+	private String processCommands(String message, ServerThread client) {
+		String response = message;
 		try {
 			if (message.indexOf(COMMAND_TRIGGER) > -1) {
 				String[] comm = message.split(COMMAND_TRIGGER);
@@ -99,29 +114,40 @@ public class Room implements AutoCloseable {
 					if (server.createNewRoom(roomName)) {
 						joinRoom(roomName, client);
 					}
-					wasCommand = true;
+					response = null;
 					break;
 				case JOIN_ROOM:
 					roomName = comm2[1];
 					joinRoom(roomName, client);
-					wasCommand = true;
+					response = null;
+					break;
+				case FLIP:
+					response = server.flipCoin();
+					break;
+				case ROLL:
+					String part2 = comm2[1];
+					String[] dice = part2.split("d");
+					int num = Integer.parseInt(dice[0]);
+					int val = Integer.parseInt(dice[1]);
+					response = server.rollDice(num, val);
 					break;
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return wasCommand;
+		return response;
 	}
 
-	protected void sendConnectionStatus(String clientName, boolean isConnect) {
+	// TODO changed from string to ServerThread
+	protected void sendConnectionStatus(ServerThread client, boolean isConnect, String message) {
 		Iterator<ServerThread> iter = clients.iterator();
 		while (iter.hasNext()) {
-			ServerThread client = iter.next();
-			boolean messageSent = client.sendConnectionStatus(clientName, isConnect);
+			ServerThread c = iter.next();
+			boolean messageSent = c.sendConnectionStatus(client.getClientName(), isConnect, message);
 			if (!messageSent) {
 				iter.remove();
-				log.log(Level.INFO, "Removed client " + client.getId());
+				log.log(Level.INFO, "Removed client " + c.getId());
 			}
 		}
 	}
@@ -136,10 +162,16 @@ public class Room implements AutoCloseable {
 	 */
 	protected void sendMessage(ServerThread sender, String message) {
 		log.log(Level.INFO, getName() + ": Sending message to " + clients.size() + " clients");
-		if (processCommands(message, sender)) {
-			// it was a command, don't broadcast
+		String resp = processCommands(message, sender);
+		if (resp == null) {
+			// System.out.print("here");
 			return;
 		}
+		message = resp;
+		// if (processCommands(message, sender)) {
+		// it was a command, don't broadcast
+		// return;
+		// }
 		Iterator<ServerThread> iter = clients.iterator();
 		while (iter.hasNext()) {
 			ServerThread client = iter.next();

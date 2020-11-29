@@ -179,6 +179,28 @@ public class SocketServer {
 		}
 	}
 
+	protected synchronized String flipCoin() {
+		String faceValue;
+		int face = (int) (Math.random() * 2);
+		if (face == 1)
+			faceValue = "HEADS";
+		else
+			faceValue = "TAILS";
+		return faceValue;
+	}
+
+	protected synchronized String rollDice(int num, int val) {
+		int temp = 0;
+		for (int i = 0; i < num; i++) {
+			int sideUP = (int) (Math.random() * val) + 1;
+			System.out.println(sideUP);
+			temp += sideUP;
+			System.out.println(temp);
+		}
+		String msg = "<i>Rolled</i> " + temp;
+		return msg;
+	}
+
 	public static void main(String[] args) {
 		// let's allow port to be passed as a command line arg
 		// in eclipse you can set this via "Run Configurations"
