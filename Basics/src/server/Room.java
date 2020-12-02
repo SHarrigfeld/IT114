@@ -88,6 +88,13 @@ public class Room implements AutoCloseable {
 		server.joinLobby(client);
 	}
 
+	protected void createRoom(String room, ServerThread client) {
+		if (server.createNewRoom(room)) {
+			sendMessage(client, "Created a new room");
+			joinRoom(room, client);
+		}
+	}
+
 	/***
 	 * Helper function to process messages to trigger different functionality.
 	 * 
@@ -132,6 +139,28 @@ public class Room implements AutoCloseable {
 					response = server.rollDice(num, val);
 					break;
 				}
+			} else {
+				// TODO Bold and Italics
+				response = message;
+				String tempMsg = message;
+
+				if (true) {
+					System.out.println(tempMsg);
+					tempMsg = tempMsg.replaceAll("\\[b", "<b>");
+					tempMsg = tempMsg.replaceAll("b\\]", "</b>");
+					System.out.println(tempMsg);
+					// Italics
+					System.out.println(tempMsg);
+					tempMsg = tempMsg.replaceAll("\\[i", "<i>");
+					tempMsg = tempMsg.replaceAll("i\\]", "</i>");
+					System.out.println(tempMsg);
+					System.out.println(tempMsg);
+					tempMsg = tempMsg.replaceAll("\\[r", "<FONT COLOR=red>");
+					tempMsg = tempMsg.replaceAll("r\\]", "</FONT>");
+					System.out.println(tempMsg);
+				}
+
+				response = tempMsg;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -164,7 +193,8 @@ public class Room implements AutoCloseable {
 		log.log(Level.INFO, getName() + ": Sending message to " + clients.size() + " clients");
 		String resp = processCommands(message, sender);
 		if (resp == null) {
-			// System.out.print("here");
+			System.out.println(
+					"here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 			return;
 		}
 		message = resp;
@@ -181,6 +211,10 @@ public class Room implements AutoCloseable {
 				log.log(Level.INFO, "Removed client " + client.getId());
 			}
 		}
+	}
+
+	public List<String> getRooms(String search) {
+		return server.getRooms(search);
 	}
 
 	/***
