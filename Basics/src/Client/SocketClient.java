@@ -15,8 +15,7 @@ import server.Payload;
 import server.PayloadType;
 
 public enum SocketClient {
-	INSTANCE; // see https://dzone.com/articles/java-singletons-using-enum "Making Singletons
-	// with Enum"
+	INSTANCE;
 
 	private static Socket server;
 	private static Thread fromServerThread;
@@ -134,6 +133,16 @@ public enum SocketClient {
 		}
 	}
 
+	private void sendOnIsMuted(String name, boolean bool) {
+		Iterator<Event> iter = events.iterator();
+		while (iter.hasNext()) {
+			Event e = iter.next();
+			if (e != null) {
+				e.onIsMuted(name, bool);
+			}
+		}
+	}
+
 	/***
 	 * Determine any special logic for different PayloadTypes
 	 * 
@@ -157,6 +166,9 @@ public enum SocketClient {
 		case GET_ROOMS:
 			// reply from ServerThread
 			sendRoom(p.getMessage());
+			break;
+		case IS_MUTED:
+			sendOnIsMuted(p.getClientName(), p.getMute());
 			break;
 		default:
 			log.log(Level.WARNING, "unhandled payload on client" + p);

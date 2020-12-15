@@ -10,5 +10,6 @@ public interface Event {
 	void onChangeRoom();
 
 	void onGetRoom(String roomName);
-	// void onGetRoom(String roomName)
+
+	void onIsMuted(String clientName, boolean isMuted);
 }

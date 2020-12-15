@@ -56,7 +56,7 @@ public class ClientUI extends JFrame implements Event {
 		roomsSearch.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("clicked");
+				// System.out.println("clicked");
 				goToPanel("rooms");
 			}
 
@@ -66,7 +66,7 @@ public class ClientUI extends JFrame implements Event {
 		windowSize.width *= .5;
 		windowSize.height *= .5;
 		setPreferredSize(windowSize);
-		setSize(windowSize);// This is needed for setLocationRelativeTo()
+		setSize(windowSize);
 		setLocationRelativeTo(null);
 		self = this;
 		setTitle(title);
@@ -78,7 +78,6 @@ public class ClientUI extends JFrame implements Event {
 		createPanelRoom();
 		createPanelUserList();
 		this.setJMenuBar(menu);
-		// TODO remove
 		createRoomsPanel();
 		showUI();
 	}
@@ -107,7 +106,6 @@ public class ClientUI extends JFrame implements Event {
 						self.next();
 					} catch (IOException e1) {
 						e1.printStackTrace();
-						// TODO handle error properly
 						log.log(Level.SEVERE, "Error connecting");
 					}
 				}
@@ -133,12 +131,10 @@ public class ClientUI extends JFrame implements Event {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String name = username.getText();
-				if (name != null && name.length() > 0) { // need external
-					// ref since "this" context is the action event, not ClientUI
-					self.username = name; // this order matters createDrawingPanel(); pack();
+				if (name != null && name.length() > 0) {
+					self.username = name;
 					self.setTitle(self.getTitle() + " - " + self.username);
 					SocketClient.INSTANCE.setUsername(self.username);
-
 					self.next();
 				}
 			}
@@ -210,7 +206,7 @@ public class ClientUI extends JFrame implements Event {
 	}
 
 	void addClient(String name) {
-		User u = new User(name);
+		User u = new User(name, "<font color=black>%s</font>");
 		Dimension p = new Dimension(userPanel.getSize().width, 30);
 		u.setPreferredSize(p);
 		u.setMinimumSize(p);
@@ -242,9 +238,7 @@ public class ClientUI extends JFrame implements Event {
 		final int PIXEL_PADDING = 6;
 		Dimension size = new Dimension(adv, hgt + PIXEL_PADDING);
 		final float PADDING_PERCENT = 1.1f;
-		// calculate modifier to line wrapping so we can display the wrapped message
 		int mult = (int) Math.floor(size.width / (textArea.getSize().width * PADDING_PERCENT));
-		// System.out.println(mult);
 		mult++;
 		return size.height * mult;
 	}
@@ -253,17 +247,14 @@ public class ClientUI extends JFrame implements Event {
 		JEditorPane entry = new JEditorPane();
 		entry.setContentType("text/html");
 		entry.setEditable(false);
-		// entry.setLayout(null);
 		entry.setText(str);
 		Dimension d = new Dimension(textArea.getSize().width, calcHeightForText(str));
-		// attempt to lock all dimensions
 		entry.setMinimumSize(d);
 		entry.setPreferredSize(d);
 		entry.setMaximumSize(d);
 		textArea.add(entry);
 
 		pack();
-		// System.out.println(entry.getSize());
 		JScrollBar sb = ((JScrollPane) textArea.getParent().getParent()).getVerticalScrollBar();
 		sb.setValue(sb.getMaximum());
 	}
@@ -358,6 +349,22 @@ public class ClientUI extends JFrame implements Event {
 		if (roomsPanel != null) {
 			roomsPanel.addRoom(roomName);
 			pack();
+		}
+	}
+
+	@Override
+	public void onIsMuted(String clientName, boolean isMuted) {
+		Iterator<User> iter = users.iterator();
+		while (iter.hasNext()) {
+			User u = iter.next();
+			if (u.getName().equalsIgnoreCase(clientName)) {
+				if (isMuted) {
+					u.setName(clientName, "<FONT COLOR=red>%s</FONT>");
+				} else {
+					u.setName(clientName, "%s");
+				}
+				break;
+			}
 		}
 	}
 }

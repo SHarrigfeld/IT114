@@ -40,14 +40,15 @@ public class RoomsPanel extends JPanel {
 		container.setAlignmentY(TOP_ALIGNMENT);
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-		// this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		this.setLayout(new BorderLayout());
 
+		// part 2 - looks like I added the below before to a different commit/branch
+		// create a tabbled panel that'll let us change between search and create
 		JTabbedPane tabbedPane = new JTabbedPane();
-
+		// create the search section (label and input)
 		JLabel searchLabel = new JLabel("Search");
 		JTextField search = new JTextField();
-
+		// let us submit the search via the enter key
 		search.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "sendAction");
 		search.getActionMap().put("sendAction", new AbstractAction() {
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -76,15 +77,11 @@ public class RoomsPanel extends JPanel {
 				}
 			}
 		});
-		//
 
 		JButton back = new JButton("Go Back");
-
-		//
 		back.setPreferredSize(d);
 		back.setMaximumSize(d);
 		back.setSize(d);
-		//
 
 		back.addActionListener(new ActionListener() {
 
@@ -93,10 +90,6 @@ public class RoomsPanel extends JPanel {
 				((ClientUI) parent).previous();
 			}
 		});
-		// this.add(back);
-		// this.add(container);
-
-		//
 		JPanel searchPanel = new JPanel();
 		searchPanel.setLayout(new BorderLayout());
 		searchPanel.add(searchLabel, BorderLayout.NORTH);
@@ -111,13 +104,12 @@ public class RoomsPanel extends JPanel {
 		this.add(tabbedPane, BorderLayout.NORTH);
 		this.add(back, BorderLayout.SOUTH);
 		this.add(container, BorderLayout.CENTER);
-		//
 
 	}
 
 	public void addRoom(String room) {
 		if (room != null) {
-			System.out.println("Adding: " + room);
+			// System.out.println("Adding: " + room);
 			RoomListItem r = new RoomListItem(room, (String roomName) -> handleSelection(roomName));
 			Dimension size = new Dimension(this.getSize().width, 40);
 			r.setPreferredSize(size);
@@ -145,11 +137,11 @@ public class RoomsPanel extends JPanel {
 	}
 
 	public void removeAllRooms() {
-		System.out.println("Clearing rooms");
+		// System.out.println("Clearing rooms");
 		Iterator<RoomListItem> iter = rooms.iterator();
 		while (iter.hasNext()) {
 			RoomListItem r = iter.next();
-			System.out.println("Removing " + r.getRoomName());
+			// System.out.println("Removing " + r.getRoomName());
 			container.remove(r);
 			r.close();
 			iter.remove();
@@ -178,7 +170,6 @@ class RoomListItem extends JPanel implements AutoCloseable {
 	 * @param room   - Name of room to show on the UI
 	 * @param onJoin - Callback to trigger when button is clicked
 	 */
-
 	public RoomListItem(String room, Consumer<String> onJoin) {
 		// TODO see below links regarding Consumer
 		// https://medium.com/swlh/understanding-java-8s-consumer-supplier-predicate-and-function-c1889b9423d
@@ -210,5 +201,4 @@ class RoomListItem extends JPanel implements AutoCloseable {
 	public String getRoomName() {
 		return roomName.getText();
 	}
-
 }

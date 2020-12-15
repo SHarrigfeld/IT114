@@ -182,13 +182,11 @@ public class SocketServer {
 		Room oldRoom = client.getCurrentRoom();
 		if (newRoom != null) {
 			if (oldRoom != null) {
-				System.out.println("joinRoom -leave old");
 				log.log(Level.INFO, client.getClientName() + " leaving room " + oldRoom.getName());
 				oldRoom.removeClient(client);
 			} else {
 				log.log(Level.WARNING, "old room is null for " + client.getClientName());
 			}
-			System.out.println("joinRoom -join new");
 			log.log(Level.INFO, client.getClientName() + " joining room " + newRoom.getName());
 			newRoom.addClient(client);
 			return true;
@@ -203,7 +201,6 @@ public class SocketServer {
 	 * @return true if it was created and false if it exists
 	 */
 	protected synchronized boolean createNewRoom(String roomName) {
-		System.out.println("creating new room");
 		if (roomName == null || roomName.equalsIgnoreCase(PRELOBBY)) {
 			return false;
 		}
@@ -222,11 +219,10 @@ public class SocketServer {
 	protected synchronized String flipCoin() {
 		String faceValue;
 		int face = (int) (Math.random() * 2);
-		System.out.print("flipCoin");
 		if (face == 1)
-			faceValue = "HEADS";
+			faceValue = "<i>Flipped a coin and got: HEADS</i>";
 		else
-			faceValue = "TAILS";
+			faceValue = "<i>Flipped a coin and got: TAILS</i>";
 		return faceValue;
 	}
 
@@ -234,9 +230,7 @@ public class SocketServer {
 		int temp = 0;
 		for (int i = 0; i < num; i++) {
 			int sideUP = (int) (Math.random() * val) + 1;
-			System.out.println(sideUP);
 			temp += sideUP;
-			System.out.println(temp);
 		}
 		String msg = "<i>Rolled</i> " + temp;
 		return msg;
