@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,6 +18,28 @@ public class ServerThread extends Thread {
 	private Room currentRoom;// what room we are in, should be lobby by default
 	private String clientName;
 	private final static Logger log = Logger.getLogger(ServerThread.class.getName());
+	List<String> mutedClients = new ArrayList<String>();
+
+	public boolean isMuted(String clientName) {
+		clientName = clientName.trim().toLowerCase();
+		return mutedClients.contains(clientName);
+	}
+
+	public void mute(String name) {
+		name = name.trim().toLowerCase();
+		if (!isMuted(name)) {
+			mutedClients.add(name);
+			sendIsMuted(name, isMuted(name));
+		}
+	}
+
+	public void unmute(String name) {
+		name = name.trim().toLowerCase();
+		if (isMuted(name)) {
+			mutedClients.remove(name);
+			sendIsMuted(name, isMuted(name));
+		}
+	}
 
 	public String getClientName() {
 		return clientName;
@@ -95,6 +120,22 @@ public class ServerThread extends Thread {
 		return sendPayload(payload);
 	}
 
+	protected boolean sendRoom(String room) {
+		Payload payload = new Payload();
+		// using same payload type as a response trigger
+		payload.setPayloadType(PayloadType.GET_ROOMS);
+		payload.setMessage(room);
+		return sendPayload(payload);
+	}
+
+	protected boolean sendIsMuted(String clientName, boolean isMuted) {
+		Payload payload = new Payload();
+		payload.setPayloadType(PayloadType.IS_MUTED);
+		payload.setMute(isMuted);
+		payload.setClientName(clientName);
+		return sendPayload(payload);
+	}
+
 	private boolean sendPayload(Payload p) {
 		try {
 			out.writeObject(p);
@@ -135,9 +176,27 @@ public class ServerThread extends Thread {
 			// we currently don't need to do anything since the UI/Client won't be sending
 			// this
 			break;
+		case GET_ROOMS:
+			List<String> roomNames = currentRoom.getRooms(p.getMessage());
+			Iterator<String> iter = roomNames.iterator();
+			while (iter.hasNext()) {
+				String room = iter.next();
+				if (room != null && !room.equalsIgnoreCase(currentRoom.getName())) {
+					if (!sendRoom(room)) {
+						break;
+					}
+				}
+			}
+			break;
+		case CREATE_ROOM:
+			currentRoom.createRoom(p.getMessage(), this);
+		case JOIN_ROOM:
+			currentRoom.joinRoom(p.getMessage(), this);
+			break;
 		default:
 			log.log(Level.INFO, "Unhandled payload on server: " + p);
 			break;
+
 		}
 	}
 
@@ -151,7 +210,7 @@ public class ServerThread extends Thread {
 					&& (fromClient = (Payload) in.readObject()) != null // reads an object from inputStream (null would
 			// likely mean a disconnect)
 			) {
-				System.out.println("Received from client: " + fromClient);
+				// System.out.println("Received from client: " + fromClient);
 				processPayload(fromClient);
 			} // close while loop
 		} catch (Exception e) {

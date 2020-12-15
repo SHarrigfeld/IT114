@@ -22,6 +22,9 @@ import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -40,14 +43,30 @@ public class ClientUI extends JFrame implements Event {
 	JPanel userPanel;
 	List<User> users = new ArrayList<User>();
 	private final static Logger log = Logger.getLogger(ClientUI.class.getName());
-	// Dimension windowSize = new Dimension(400, 400);
 	Dimension windowSize = Toolkit.getDefaultToolkit().getScreenSize();
+	String username;
+	RoomsPanel roomsPanel;
+	JMenuBar menu;
 
 	public ClientUI(String title) {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		menu = new JMenuBar();
+		JMenu roomsMenu = new JMenu("Rooms");
+		JMenuItem roomsSearch = new JMenuItem("Search");
+		roomsSearch.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// System.out.println("clicked");
+				goToPanel("rooms");
+			}
+
+		});
+		roomsMenu.add(roomsSearch);
+		menu.add(roomsMenu);
 		windowSize.width *= .5;
 		windowSize.height *= .5;
 		setPreferredSize(windowSize);
+		setSize(windowSize);
 		setLocationRelativeTo(null);
 		self = this;
 		setTitle(title);
@@ -55,8 +74,11 @@ public class ClientUI extends JFrame implements Event {
 		setLayout(card);
 		createConnectionScreen();
 		createUserInputScreen();
+
 		createPanelRoom();
 		createPanelUserList();
+		this.setJMenuBar(menu);
+		createRoomsPanel();
 		showUI();
 	}
 
@@ -84,7 +106,6 @@ public class ClientUI extends JFrame implements Event {
 						self.next();
 					} catch (IOException e1) {
 						e1.printStackTrace();
-						// TODO handle error properly
 						log.log(Level.SEVERE, "Error connecting");
 					}
 				}
@@ -92,7 +113,7 @@ public class ClientUI extends JFrame implements Event {
 
 		});
 		panel.add(button);
-		this.add(panel);
+		this.add(panel, "login");
 	}
 
 	void createUserInputScreen() {
@@ -103,20 +124,25 @@ public class ClientUI extends JFrame implements Event {
 		panel.add(userLabel);
 		panel.add(username);
 		JButton button = new JButton("Join");
+		ClientUI self = this;
+
 		button.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String name = username.getText();
 				if (name != null && name.length() > 0) {
-					SocketClient.setUsername(name);
+					self.username = name;
+					self.setTitle(self.getTitle() + " - " + self.username);
+					SocketClient.INSTANCE.setUsername(self.username);
 					self.next();
 				}
 			}
 
 		});
+
 		panel.add(button);
-		this.add(panel);
+		this.add(panel, "details");
 	}
 
 	void createPanelRoom() {
@@ -148,7 +174,7 @@ public class ClientUI extends JFrame implements Event {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (text.getText().length() > 0) {
-					SocketClient.sendMessage(text.getText());
+					SocketClient.INSTANCE.sendMessage(text.getText());
 					text.setText("");
 				}
 			}
@@ -156,7 +182,7 @@ public class ClientUI extends JFrame implements Event {
 		});
 		input.add(button);
 		panel.add(input, BorderLayout.SOUTH);
-		this.add(panel);
+		this.add(panel, "lobby");
 	}
 
 	void createPanelUserList() {
@@ -174,8 +200,13 @@ public class ClientUI extends JFrame implements Event {
 		textArea.getParent().getParent().getParent().add(scroll, BorderLayout.EAST);
 	}
 
+	void createRoomsPanel() {
+		roomsPanel = new RoomsPanel(this);
+		this.add(roomsPanel, "rooms");
+	}
+
 	void addClient(String name) {
-		User u = new User(name);
+		User u = new User(name, "<font color=black>%s</font>");
 		Dimension p = new Dimension(userPanel.getSize().width, 30);
 		u.setPreferredSize(p);
 		u.setMinimumSize(p);
@@ -207,9 +238,7 @@ public class ClientUI extends JFrame implements Event {
 		final int PIXEL_PADDING = 6;
 		Dimension size = new Dimension(adv, hgt + PIXEL_PADDING);
 		final float PADDING_PERCENT = 1.1f;
-		// calculate modifier to line wrapping so we can display the wrapped message
 		int mult = (int) Math.floor(size.width / (textArea.getSize().width * PADDING_PERCENT));
-		// System.out.println(mult);
 		mult++;
 		return size.height * mult;
 	}
@@ -218,16 +247,14 @@ public class ClientUI extends JFrame implements Event {
 		JEditorPane entry = new JEditorPane();
 		entry.setContentType("text/html");
 		entry.setEditable(false);
-		// entry.setLayout(null);
 		entry.setText(str);
 		Dimension d = new Dimension(textArea.getSize().width, calcHeightForText(str));
-		// attempt to lock all dimensions
 		entry.setMinimumSize(d);
 		entry.setPreferredSize(d);
 		entry.setMaximumSize(d);
 		textArea.add(entry);
+
 		pack();
-		System.out.println(entry.getSize());
 		JScrollBar sb = ((JScrollPane) textArea.getParent().getParent()).getVerticalScrollBar();
 		sb.setValue(sb.getMaximum());
 	}
@@ -240,9 +267,23 @@ public class ClientUI extends JFrame implements Event {
 		card.previous(this.getContentPane());
 	}
 
+	void goToPanel(String panel) {
+		switch (panel) {
+		case "rooms":
+			// TODO get rooms
+			roomsPanel.removeAllRooms();
+			SocketClient.INSTANCE.sendGetRooms(null);
+			break;
+		default:
+			// no need to react
+			break;
+		}
+		card.show(this.getContentPane(), panel);
+	}
+
 	void connect(String host, String port) throws IOException {
-		SocketClient.callbackListener(this);
-		SocketClient.connectAndStart(host, port);
+		SocketClient.INSTANCE.registerCallbackListener(this);
+		SocketClient.INSTANCE.connectAndStart(host, port);
 	}
 
 	void showUI() {
@@ -293,12 +334,37 @@ public class ClientUI extends JFrame implements Event {
 			removeClient(u);
 			iter.remove();
 		}
+		goToPanel("lobby");
 	}
 
 	public static void main(String[] args) {
 		ClientUI ui = new ClientUI("My UI");
 		if (ui != null) {
 			log.log(Level.FINE, "Started");
+		}
+	}
+
+	public void onGetRoom(String roomName) {
+		// TODO Auto-generated method stub
+		if (roomsPanel != null) {
+			roomsPanel.addRoom(roomName);
+			pack();
+		}
+	}
+
+	@Override
+	public void onIsMuted(String clientName, boolean isMuted) {
+		Iterator<User> iter = users.iterator();
+		while (iter.hasNext()) {
+			User u = iter.next();
+			if (u.getName().equalsIgnoreCase(clientName)) {
+				if (isMuted) {
+					u.setName(clientName, "<FONT COLOR=red>%s</FONT>");
+				} else {
+					u.setName(clientName, "%s");
+				}
+				break;
+			}
 		}
 	}
 }
